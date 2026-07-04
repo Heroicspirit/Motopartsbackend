@@ -29,6 +29,15 @@ export class UserService {
         const newUser =await userRepository.createdUser(data);
         return newUser;
     }
+    generateToken(userId: any, email: string, role: string) {
+        const payload = {
+            id: userId.toString(),
+            email,
+            role
+        };
+        return jwt.sign(payload, JWT_SECRET, {expiresIn: '30d'});
+    }
+
     async loginUser(data : LoginUserDto) {
         const existingUser = await userRepository.getUserByEmail(data.email);
         if(!existingUser) {
@@ -38,13 +47,7 @@ export class UserService {
         if(!isPasswordValid) {
             throw new HttpError(401, "Invalid credentials");
         }
-        const payload = {
-            id: existingUser._id,
-            name: existingUser.name,
-            email: existingUser.email,
-            role: existingUser.role
-        };
-        const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '30d'});
+        const token = this.generateToken(existingUser._id, existingUser.email, existingUser.role);
         return { token, existingUser}
     }
 
