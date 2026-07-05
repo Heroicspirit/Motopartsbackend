@@ -136,4 +136,81 @@ export class AuthController{
             res.redirect(`${process.env.CLIENT_URL}/user/dashboard?token=${token}`);
         })(req, res);
     };
+
+    // Admin user management
+    async getAllUsers(req: Request, res: Response) {
+        try {
+            const page = parseInt(req.query.page as string) || 1;
+            const size = parseInt(req.query.size as string) || 10;
+            const search = req.query.search as string;
+            
+            const result = await userService.getAllUsers(page, size, search);
+            return res.status(200).json({
+                success: true,
+                data: result
+            });
+        } catch (error: Error | any) {
+            return res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || "Internal Server Error"
+            });
+        }
+    }
+
+    async getUserById(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+            const user = await userService.getUserById(userId);
+            return res.status(200).json({
+                success: true,
+                data: user
+            });
+        } catch (error: Error | any) {
+            return res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || "Internal Server Error"
+            });
+        }
+    }
+
+    async updateUser(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+            const parsedData = UpdateUserDto.safeParse(req.body);
+            if (!parsedData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validation Error",
+                    errors: parsedData.error.flatten().fieldErrors
+                });
+            }
+            const updatedUser = await userService.updateUser(userId, parsedData.data);
+            return res.status(200).json({
+                success: true,
+                data: updatedUser,
+                message: "User updated successfully"
+            });
+        } catch (error: Error | any) {
+            return res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || "Internal Server Error"
+            });
+        }
+    }
+
+    async deleteUser(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+            await userService.deleteUser(userId);
+            return res.status(200).json({
+                success: true,
+                message: "User deleted successfully"
+            });
+        } catch (error: Error | any) {
+            return res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || "Internal Server Error"
+            });
+        }
+    }
 }

@@ -7,7 +7,37 @@ const productService = new ProductService();
 export class ProductController {
     async createProduct(req: Request, res: Response) {
         try {
-            const parsedData = CreateProductDTO.safeParse(req.body);
+            const files = req.files as Express.Multer.File[];
+            
+            // Process uploaded files
+            let imageUrls: string[] = [];
+            if (files && files.length > 0) {
+                imageUrls = files.map(file => `/uploads/${file.filename}`);
+            }
+
+            // Parse specs from JSON string if present
+            let specs = req.body.specs;
+            if (typeof specs === 'string') {
+                try {
+                    specs = JSON.parse(specs);
+                } catch (e) {
+                    specs = [];
+                }
+            }
+
+            // Prepare product data with image URLs
+            const productData = {
+                ...req.body,
+                image: imageUrls.length > 0 ? imageUrls[0] : req.body.image,
+                images: imageUrls.length > 0 ? imageUrls : req.body.images,
+                price: parseFloat(req.body.price),
+                originalPrice: req.body.originalPrice ? parseFloat(req.body.originalPrice) : undefined,
+                stock: req.body.stock ? parseInt(req.body.stock) : 0,
+                featured: req.body.featured === 'true' || req.body.featured === true,
+                specs: specs
+            };
+
+            const parsedData = CreateProductDTO.safeParse(productData);
             if (!parsedData.success) {
                 return res.status(400).json({
                     success: false,
@@ -99,7 +129,37 @@ export class ProductController {
     async updateProduct(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const parsedData = UpdateProductDTO.safeParse(req.body);
+            const files = req.files as Express.Multer.File[];
+            
+            // Process uploaded files
+            let imageUrls: string[] = [];
+            if (files && files.length > 0) {
+                imageUrls = files.map(file => `/uploads/${file.filename}`);
+            }
+
+            // Parse specs from JSON string if present
+            let specs = req.body.specs;
+            if (typeof specs === 'string') {
+                try {
+                    specs = JSON.parse(specs);
+                } catch (e) {
+                    specs = [];
+                }
+            }
+
+            // Prepare product data with image URLs
+            const productData = {
+                ...req.body,
+                image: imageUrls.length > 0 ? imageUrls[0] : req.body.image,
+                images: imageUrls.length > 0 ? imageUrls : req.body.images,
+                price: req.body.price ? parseFloat(req.body.price) : undefined,
+                originalPrice: req.body.originalPrice ? parseFloat(req.body.originalPrice) : undefined,
+                stock: req.body.stock !== undefined ? parseInt(req.body.stock) : undefined,
+                featured: req.body.featured === 'true' || req.body.featured === true,
+                specs: specs
+            };
+
+            const parsedData = UpdateProductDTO.safeParse(productData);
             if (!parsedData.success) {
                 return res.status(400).json({
                     success: false,
